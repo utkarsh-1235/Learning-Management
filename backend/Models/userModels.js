@@ -51,6 +51,18 @@ UserSchema.pre('save',function(next){
         }
         this.password = bcrypt.hash(this.password,10)
 })
+
+UserSchema.methods = {
+    generateJWTToken: async function(){
+        return await this.generateJWTToken.sign(
+            { id: this._id, emails: this.email, subscription: this.subscription, role: this.role},
+            process.env.JWT_SECRET,
+            {
+                expiresIn: process.env.JWT_EXPIRY
+            }
+        )
+    }
+}
 const userModel = model('user',UserSchema)
 export default userModel
 

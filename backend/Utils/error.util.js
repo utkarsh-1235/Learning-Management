@@ -1,5 +1,5 @@
 class AppError extends Error {
-    constructor(messge, statusCode){
+    constructor(message, statusCode){
         super(message)
 
         this .statusCode = statusCode
@@ -7,3 +7,4 @@ class AppError extends Error {
         Error.capturesStacktrace(this, this.constructor)
     }
 }
+export default AppError
