@@ -1,79 +1,267 @@
-import User from '../Models/userModels.js'
- import AppError from "../Utils/error.util.js"
+import userModel from '../Models/userModels.js'
+import bcrypt from 'bcrypt'
+import crypto from 'crypto'
+import emailValidator from 'email-validator'
+import AppError from '../Utils/error.util.js'
 
-const cookieOptions = {
-    maxAge: 7*24*24*60*1000,
-    httpOnly: true,
-    secure: true
-}
-const register = async(req,res,next)=>{
-   const {name, email, password} = req.body
-   console.log(name, email, password)
+/******************************************************
+ * @SIGNUP
+ * @route /api/auth/signup
+ * @method POST
+ * @description singUp function for creating new user
+ * @body name, email, password, confirmPassword
+ * @returns User Object
+ ******************************************************/
 
-   if(!name || !email || !password){
-    return next(new AppError('All fields are required', 400))
-   }
+const register = async (req, res, next) => {
+  const { name, email, password, confirmPassword } = req.body;
+    console.log(name, email, password, confirmPassword)
+  /// every field is required
+  if (!name || !email || !password || !confirmPassword) {
+    return next(new AppError("Every field is required",400));
+  }
 
-   const userExists = await User.findOne({email})
+  //validate email using npm package "email-validator"
+  const validEmail = emailValidator.validate(email);
+  if (!validEmail) {
+    return next(new AppError("Please provide a valid email address 📩",400));
+  }
 
-   if(userExists){
-    return next(new AppError('User already exists', 400))
-   }
-
-   const user = await User.create({
-      fullName,
-      email,
-      password,
-      avatar: {
-        public_url: email,
-        secure_url: 'https://gravatar.com/avatar/3cdf2ceab2880dc68af0510ad8e2418c?s=400&d=retro&r=pg'
+  try {
+    /// send password not match err if password !== confirmPassword
+    if (password !== confirmPassword) {
+      return next(new AppError("password and confirm Password does not match ❌", 400));
     }
-   })
 
-   if(!user){
-    return next(new AppError('User registration failed, try again', 400))
-   }
+    const userInfo = new userModel(req.body);
 
-   // To do file upload
-   
-   await user.save()
-   user.password = undefined
+    // userSchema "pre" middleware functions for "save" will hash the password using bcrypt
+    // before saving the data into the database
+    const result = await userInfo.save();
+    return res.status(200).json({
+      success: true,
+      data: result
+    });
+  } catch (error) {
+    /// send the message of the email is not unique.
+    if (error.code === 11000) {
+      return next(new AppError(`Account already exist with the provided email ${email} 😒`,400));
+    }
 
-   const token = await user.generate
-  
-   res.cookie ('token',token,cookieOptions)
+    return next(new AppError(error.message,400));
+  }
+};
 
-   res.status(201).json({
-     success: true,
-     message: "user registered successfully",
-     user
-   })
-}
-const login = async(req,res)=>{
-     const {email, password} = req.body   
+/******************************************************
+ * @SIGNIN
+ * @route /api/auth/signin
+ * @method POST
+ * @description verify user and send cookie with jwt token
+ * @body email , password
+ * @returns User Object , cookie
+ ******************************************************/
 
-     if(!email || !password){
-      return next(new AppError('All fields are required',400))
-     }
-     const user = await User.findOne({
+const signIn = async (req, res, next) => {
+  const { email, password } = req.body;
+
+  // send response with error message if email or password is missing
+  if (!email || !password) {
+    return next(new AppError("email and password are required", 400));
+  }
+
+  try {
+    // check user exist or not
+    const user = await userModel
+      .findOne({
+        email
+      })
+      .select("+password");
+
+    // If user is null or the password is incorrect return response with error message
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      // bcrypt.compare returns boolean value
+      return next(new AppError("invalid credentials", 400));
+    }
+
+    // Create jwt token using userSchema method( jwtToken() )
+    const token = user.jwtToken();
+    user.password = undefined;
+
+    const cookieOption = {
+      maxAge: 24 * 60 * 60 * 1000, //24hr
+      httpOnly: true //  not able to modify  the cookie in client side
+    };
+
+    res.cookie("token", token, cookieOption);
+    res.status(200).json({
+      success: true,
+      data: user
+    });
+  } catch (error) {
+    return next(new AppError("invalid credentials", 400));
+  }
+};
+
+/******************************************************
+ * @FORGOTPASSWORD
+ * @route /api/auth/forgotpassword
+ * @method POST
+ * @description get the forgot password token
+ * @returns forgotPassword token
+ ******************************************************/
+
+const forgotPassword = async (req, res, next) => {
+  const email = req.body.email;
+
+  // return response with error message If email is undefined
+  if (!email) {
+    return next(new AppError("Email is required", 400))
+  }
+
+  try {
+    // retrieve user using given email.
+    const user = await userModel.findOne({
       email
-     }).select('+password')
+    });
 
-     if(!user || !user.comparePassword(password) ){
-      return next(new AppError('Email or password does not match'))
-     }
-}
+    // return response with error message user not found
+    if (!user) {
+      return next(new AppError("user not found 🙅", 400));
+    }
 
-const logout = (req,res)=>{
-    
-}
-const getProfile = (req,res)=>{
-    
-}
+    // Generate the token with userSchema method getForgotPasswordToken().
+    const forgotPasswordToken = user.getForgotPasswordToken();
 
-export {
-    register,
-    login,
-    logout,
-    getProfile,
-}
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      token: forgotPasswordToken
+    });
+  } catch (error) {
+    return next(new AppError(error.message, 400));
+  }
+};
+
+/******************************************************
+ * @RESETPASSWORD
+ * @route /api/auth/resetpassword/:token
+ * @method POST
+ * @description update password
+ * @returns User Object
+ ******************************************************/
+
+const resetPassword = async (req, res, next) => {
+  const { token } = req.params;
+  const { password, confirmPassword } = req.body;
+
+  // return error message if password or confirmPassword is missing
+  if (!password || !confirmPassword) {
+    return res.status(400).json({
+      success: false,
+      message: "password and confirmPassword is required"
+    });
+  }
+
+  // return error message if password and confirmPassword  are not same
+  if (password !== confirmPassword) {
+    return res.status(400).json({
+      success: false,
+      message: "password and confirm Password does not match ❌"
+    });
+  }
+
+  const hashToken = crypto.createHash("sha256").update(token).digest("hex");
+
+  try {
+    const user = await userModel.findOne({
+      forgotPasswordToken: hashToken,
+      forgotPasswordExpiryDate: {
+        $gt: new Date() // forgotPasswordExpiryDate() less the current date
+      }
+    });
+
+    // return the message if user not found
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid Token or token is expired"
+      });
+    }
+
+    user.password = password;
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "successfully reset the password"
+    });
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+/******************************************************
+ * @LOGOUT
+ * @route /api/auth/logout
+ * @method GET
+ * @description Remove the token form  cookie
+ * @returns logout message and cookie without token
+ ******************************************************/
+
+const logout = async (req, res, next) => {
+  try {
+    const cookieOption = {
+      expires: new Date(), // current expiry date
+      httpOnly: true //  not able to modify  the cookie in client side
+    };
+
+    // return response with cookie without token
+    res.cookie("token", null, cookieOption);
+    res.status(200).json({
+      success: true,
+      message: "Logged Out"
+    });
+  } catch (error) {
+    res.stats(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+/******************************************************
+ * @GETUSER
+ * @route /api/auth/user
+ * @method GET
+ * @description retrieve user data from mongoDb if user is valid(jwt auth)
+ * @returns User Object
+ ******************************************************/
+
+const getUser = async (req, res, next) => {
+  const userId = req.user.id;
+  try {
+    const user = await userModel.findById(userId);
+    return res.status(200).json({
+      success: true,
+      data: user
+    });
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+export  {
+  register,
+  signIn,
+  forgotPassword,
+  getUser,
+  resetPassword,
+  logout
+};

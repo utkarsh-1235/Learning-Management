@@ -1,12 +1,23 @@
 import {Router} from 'express'
-import {register, login, logout, getProfile} from '../Controllers/usreController.js'
-const router = Router()
+const authRouter = Router();
 
+import jwtAuth from '../Middleware/JwtAuthMiddleware.js'
 
-router.post('/register',register)
-router.post('/login',login)
-router.get('/logout',logout)
-router.get('/me',getProfile)
+import {
+  register,
+  signIn,
+  forgotPassword,
+  getUser,
+  resetPassword,
+  logout
+} from '../Controllers/usreController.js'
 
+authRouter.post("/register", register);
+authRouter.post("/signin", signIn);
+authRouter.post("/forgotpassword", forgotPassword);
+authRouter.post("/resetpassword/:token", resetPassword);
 
-export default router
+authRouter.get("/user", jwtAuth, getUser);
+authRouter.get("/logout", jwtAuth, logout);
+
+export default authRouter
