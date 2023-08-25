@@ -4,7 +4,7 @@ const authRoute = express.Router();
 
 const authmiddleware = require('../Middleware/middleware')
 
-const {signUp,
+const {register,
        signIn,
        forgotPassword,
        resetPassword,
@@ -12,7 +12,7 @@ const {signUp,
        logout} = require('../Controllers/Controller.js')
 
 
-authRoute.post('/signup', signUp);
+authRoute.post('/register', upload.single("avatar"),register);
 authRoute.post('/signin', signIn);
 authRoute.post("/forgotpassword", forgotPassword);
 authRoute.post("/resetpassword/:token", resetPassword);

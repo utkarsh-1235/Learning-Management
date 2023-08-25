@@ -12,61 +12,86 @@ const crypto = require('crypto')
  * @returns User Object
  ******************************************************/
 
-const signUp = async(req, res, next)=>{
-    const {name, email, password, confirmPassword} = req.body;
-    console.log(name, email, password, confirmPassword);
+const register = async(req, res, next)=>{
+    const {fullName, email, password } = req.body;
+    console.log(name, email, password);
 
       /// every field is required
-    if(!name || !email || !password || !confirmPassword){
+    if(!fullName || !email || !password){
         return res.status(400).json({
             success: false,
             message: "Every field is required"
         })
     }
-        //validate email using npm package "email-validator"
-        const validEmail = emailValidator.validate(email)
+    const userExists = await User.findOne({ email});
 
-        if(!validEmail){
-            return res.status(400).json({
-                success: false,
-                message: "Please provide a valid email address 📩"
-            })
-        }
-        try{
-                /// send password not match err if password !== confirmPassword
-            if(password !== confirmPassword){
-                return res.status(400).json({
-                    success: false,
-                    message: "password and confirm Password does not match ❌"
-                })
-            }
-    
-            // userSchema "pre" middleware functions for "save" will hash the password using bcrypt
-    // before saving the data into the database
-    const userInfo = new userModel(req.body);
-            const result = await userInfo.save();
-            return res.status(200).json({
-                success: true,
-                data: result
-    
-            });
-        }
-        catch(err){
-       
-            /// send the message of the email is not unique.
-    if (err.code === 11000) {
-        return res.status(400).json({
-          success: false,
-          message: `Account already exist with the provided email ${email} 😒`
+    if(userExists){
+       return res.status(400).json({
+        success: false,
+        message: 'Email already exists'
+       })
+    }
+
+    const user = await User.create({
+       fullName,
+       email,
+       password,
+       avatar: {
+         public_id: email,
+         secure_url: 'https://res.cloudinary.com/du9jzqlpt/image/upload/v1674647316/avatar_drzgxv.jpg'
+       }
+    });
+
+    if(!user){
+      return res.status(400).json({
+         success: false,
+         message: 'User registration failed, please try again'
+      })
+    }
+
+    console.log('File Details > ', JSON.stringify(req.file));
+    if(req.file){
+      try{
+        const result = await cloudinary.v2.uploader.upload(req.file.path, {
+            folder: 'lms',
+            width: 250,
+            height: 250,
+            gravity: 'faces',
+            crop: 'fill'
         });
-      }
-            return res.status(400).json({
-                message: err.message
-            })
-        }
-    
 
-};
+        if(result) {
+          user.avatar.public_id = result.public_id;
+          user.avatar.secure_url = result.secure_url;
+
+          // Remove file from server
+          fs.rm(`uploads/${req.file.filename}`)
+        }
+      }
+      catch(e){
+        return res.status(500).json({
+           success: false,
+           message: err.message ||'File not uploaded, please try again'
+        })
+      }
+    }
+    await user.save();
+
+    user.password = undefined;
+
+    const token = await user.generateJWTToken();
+
+    res.cookie('token', token, cookieOptions)
+
+    res.status(201).json({
+      success: true,
+      message: 'User registered successfully', 
+      user,
+    })
+     
+  };
+
+
 
 const signIn = async function(req, res, next){
     const { email, password } = req.body;
@@ -285,7 +310,7 @@ const forgotPassword = async (req, res, next) => {
     }
   };
 
-module.exports = {signUp, 
+module.exports = {register, 
                   signIn,
                   forgotPassword,
                   getUser,
