@@ -1,6 +1,5 @@
-
 const mongoose = require('mongoose');
-const { Schema } = mongoose;
+const { Schema, model } = mongoose;
 const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const JWT = require('jsonwebtoken');
@@ -13,6 +12,7 @@ const userSchema = new Schema(
       require: [true, 'user name is Required'],
       minLength: [5, 'Name must be at least 5 characters'],
       maxLength: [50, 'Name must be less than 50 characters'],
+      lowercase: true,
       trim: true,
     },
     email: {
@@ -21,10 +21,28 @@ const userSchema = new Schema(
       unique: true,
       lowercase: true,
       unique: [true, 'already registered'],
+      match: [/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
+      'Please fill in a valid email address',
+    ]
     },
     password: {
       type: String,
+      required: [true, 'password is required'],
+      minLength:[8, 'password must be at least 8 characters'],
       select: false,
+    },
+    avatar: {
+      public_id:{
+        type: 'String'
+      },
+      secure_url: {
+        type: 'String'
+      }
+    },
+    role:{
+      type: 'String',
+      enum: ['USER', 'ADMIN'],
+      default: 'USER'
     },
     forgotPasswordToken: {
       type: String,
@@ -32,6 +50,10 @@ const userSchema = new Schema(
     forgotPasswordExpiryDate: {
       type: Date,
     },
+    subscription:{
+      id: String,
+      status: String
+    }
   },
   { timestamps: true }
 );
@@ -49,15 +71,15 @@ userSchema.methods = {
   //method for generating the jwt token
   jwtToken() {
     return JWT.sign(
-      { id: this._id, email: this.email },
-      process.env.SECRET,
-      { expiresIn: '24h' } // 24 hours
+      { id: this._id, email: this.email, subscription: this.subscription, role: this.role },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.       JWT_EXPIRY, } 
     );
   },
 
   //userSchema method for generating and return forgotPassword token
-  getForgotPasswordToken() {
-    const forgotToken = crypto.randomBytes(20).toString('hex');
+  getForgotPasswordResetToken: async function() {
+    const resetToken = crypto.randomBytes(20).toString('hex');
     //step 1 - save to DB
     this.forgotPasswordToken = crypto
       .createHash('sha256')
@@ -65,10 +87,10 @@ userSchema.methods = {
       .digest('hex');
 
     /// forgot password expiry date
-    this.forgotPasswordExpiryDate = Date.now() + 20 * 60 * 1000; // 20min
+    this.forgotPasswordExpiry = Date.now() + 20 * 60 * 1000; // 20min
 
     //step 2 - return values to user
-    return forgotToken;
+    return resetToken;
   },
 };
 
