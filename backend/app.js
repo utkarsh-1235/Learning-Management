@@ -9,9 +9,9 @@ const cors = require('cors')
 dbConnect();
 
  app.use(express.json()); // Built-in middleware
-// app.use(cookieParser()); // Third-party middleware
+app.use(cookieParser()); // Third-party middleware
 
-// app.use(cors({ origin: [process.env.CLIENT_URL], credentials: true })); //Third-party middleware
+app.use(cors({ origin: [process.env.CLIENT_URL], credentials: true })); //Third-party middleware
 
 //auth Router
 app.use('/api/auth',authRoute);

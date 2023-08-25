@@ -2,13 +2,22 @@ const express = require('express')
 
 const authRoute = express.Router();
 
-
+const authmiddleware = require('../Middleware/middleware')
 
 const {signUp,
-signIn} = require('../Controllers/Controller.js')
+       signIn,
+       forgotPassword,
+       resetPassword,
+       getUser,
+       logout} = require('../Controllers/Controller.js')
 
 
-authRoute.post('/signUp', signUp);
-authRoute.post('/signIn', signIn);
+authRoute.post('/signup', signUp);
+authRoute.post('/signin', signIn);
+authRoute.post("/forgotpassword", forgotPassword);
+authRoute.post("/resetpassword/:token", resetPassword);
+
+authRoute.get("/user", authmiddleware, getUser);
+authRoute.get("/logout", authmiddleware, logout);
 
 module.exports = authRoute;
