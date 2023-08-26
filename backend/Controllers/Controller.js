@@ -2,9 +2,16 @@ const userModel = require('../Models/userSchema.js')
 const emailValidator = require('email-validator')
 const bcrypt = require('bcrypt')
 const crypto = require('crypto')
+const AppError = require('../Utils/error.utils.js')
 
+
+const cookieOptions = {
+  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  httpOnly: true,
+  secure: true
+}
 /******************************************************
- * @SIGNUP
+ * @Register
  * @route /api/auth/signup
  * @method POST
  * @description singUp function for creating new user
@@ -13,26 +20,20 @@ const crypto = require('crypto')
  ******************************************************/
 
 const register = async(req, res, next)=>{
-    const {fullName, email, password } = req.body;
-    console.log(name, email, password);
+    const {fullName, email, password, avatar } = req.body;
+    console.log(fullName, email, password, avatar);
 
       /// every field is required
     if(!fullName || !email || !password){
-        return res.status(400).json({
-            success: false,
-            message: "Every field is required"
-        })
+        return next(new AppError("Every field is required", 400));
     }
-    const userExists = await User.findOne({ email});
+    const userExists = await userModel.findOne({ email});
 
     if(userExists){
-       return res.status(400).json({
-        success: false,
-        message: 'Email already exists'
-       })
+       return next( new AppError("Email already exists", 400));
     }
 
-    const user = await User.create({
+    const user = await userModel.create({
        fullName,
        email,
        password,
@@ -43,10 +44,7 @@ const register = async(req, res, next)=>{
     });
 
     if(!user){
-      return res.status(400).json({
-         success: false,
-         message: 'User registration failed, please try again'
-      })
+      return next(new AppError('User registration failed, please try again', 400));
     }
 
     console.log('File Details > ', JSON.stringify(req.file));
@@ -69,17 +67,14 @@ const register = async(req, res, next)=>{
         }
       }
       catch(e){
-        return res.status(500).json({
-           success: false,
-           message: err.message ||'File not uploaded, please try again'
-        })
+        return next(new AppError(e || 'File not uploaded, please try again',500 ))
       }
     }
     await user.save();
 
     user.password = undefined;
 
-    const token = await user.generateJWTToken();
+    const token = await user.jwtToken();
 
     res.cookie('token', token, cookieOptions)
 
@@ -92,60 +87,88 @@ const register = async(req, res, next)=>{
   };
 
 
-
-const signIn = async function(req, res, next){
-    const { email, password } = req.body;
+/******************************************************
+   * @login
+   * @route /api/auth/user
+   * @method GET
+   * @description retrieve user data from mongoDb if user is valid(jwt auth)
+   * @returns User Object
+   ******************************************************/
+  
+const login = async (req, res, next) => {
+  
+  try {
+    const {email, passowrd } = req.body;
 
     if(!email || !password){
-      return res.status(400).json({
-         success:false,
-         message:"email and password are required"
-      })
+      return next(new AppError('All fields are required', 400));
     }
-
-    try{
-     const user = await userModel
-     .findOne({
+    const user = await User.findOne({
       email
-     })
-     .select("+password")
-      
-   //If user not exist and password not matches to actual password then show error
+    }).select('+password');
 
-     if(!user || !await bcrypt.compare(password, user.password )){
-           return res.status(400).json({
-              success: false,
-              message:"invalid credentials"
-           })
-     }
-
-      
-
-// Generate token
-     const token = user.jwtToken()
-     user.password = undefined
-
-     const cookieOption = {
-      maxAge: 24*60*60*1000,
-      httpOnly: true
-     }
-     res.cookie("token", token, cookieOption);
-     res.status(200).json({
-      success : true,
-      data : user
-     })
-     
-}
-
-    catch(err){
-         res.status(400).json({
-             success : false,
-             message : `ERROR ${err.message}`
-         })
+    if(!user || !user.comparePassword(password)){
+      return next(new AppError('Email or password does not match', 400));
     }
+
+    const token = await user.generateJWTToken();
+     user.password = undefined;
+
+     res.cookie('token', token, cookieOptions);
+
+     res.status(200).json({
+      success: true,
+      message: 'User loggedin successfully',
+      user
+     });
+  } catch (error) {
+    return next(new AppError(e.message, 500));
+  }
 };
 
 
+  /******************************************************
+   * @LOGOUT
+   * @route /api/auth/logout
+   * @method GET
+   * @description Remove the token form  cookie
+   * @returns logout message and cookie without token
+   ******************************************************/
+  
+  const logout =  (req, res) => {
+    res.cookie('token', null, {
+      secure: true,
+      maxAge: 0,
+      httpOnly: true
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'User logged out successfully'
+    })
+  };
+
+  /************
+   * @GetUserProfile
+   * @route /
+   * @method Get
+   * @description get the user profile
+   */
+
+  const getprofile = async(req, res)=>{
+     try{
+       const userId = req.user.id;
+       const user = await userModel.findById(userId);
+
+       res.status(200).json({
+        success: true,
+        message: 'User details',
+        user
+       });
+     } catch(e){
+      return next(new AppError('Failed to fetch profile',500));
+     }
+  };
 /******************************************************
  * @FORGOTPASSWORD
  * @route /api/auth/forgotpassword
@@ -196,6 +219,9 @@ const forgotPassword = async (req, res, next) => {
     }
   };
   
+
+
+
   /******************************************************
    * @RESETPASSWORD
    * @route /api/auth/resetpassword/:token
@@ -257,63 +283,14 @@ const forgotPassword = async (req, res, next) => {
     }
   };
   
-  /******************************************************
-   * @LOGOUT
-   * @route /api/auth/logout
-   * @method GET
-   * @description Remove the token form  cookie
-   * @returns logout message and cookie without token
-   ******************************************************/
   
-  const logout = async (req, res, next) => {
-    try {
-      const cookieOption = {
-        expires: new Date(), // current expiry date
-        httpOnly: true //  not able to modify  the cookie in client side
-      };
   
-      // return response with cookie without token
-      res.cookie("token", null, cookieOption);
-      res.status(200).json({
-        success: true,
-        message: "Logged Out"
-      });
-    } catch (error) {
-      res.stats(400).json({
-        success: false,
-        message: error.message
-      });
-    }
-  };
   
-  /******************************************************
-   * @GETUSER
-   * @route /api/auth/user
-   * @method GET
-   * @description retrieve user data from mongoDb if user is valid(jwt auth)
-   * @returns User Object
-   ******************************************************/
-  
-  const getUser = async (req, res, next) => {
-    const userId = req.user.id;
-    try {
-      const user = await userModel.findById(userId);
-      return res.status(200).json({
-        success: true,
-        data: user
-      });
-    } catch (error) {
-      return res.status(400).json({
-        success: false,
-        message: error.message
-      });
-    }
-  };
-
-module.exports = {register, 
-                  signIn,
+module.exports = {register,
+                  login, 
+                  logout,
+                  getprofile,
                   forgotPassword,
-                  getUser,
                   resetPassword,
-                  logout
+                  
                   }

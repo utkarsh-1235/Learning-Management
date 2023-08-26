@@ -3,21 +3,24 @@ const express = require('express')
 const authRoute = express.Router();
 
 const authmiddleware = require('../Middleware/middleware')
+const upload = require('../Middleware/multer.middleware')
 
 const {register,
-       signIn,
+       login,
+       logout,
+       getprofile,
        forgotPassword,
-       resetPassword,
-       getUser,
-       logout} = require('../Controllers/Controller.js')
+       resetPassword} = require('../Controllers/Controller.js')
 
 
 authRoute.post('/register', upload.single("avatar"),register);
-authRoute.post('/signin', signIn);
+authRoute.post('/login', login);
+authRoute.post('/logout', logout);
+authRoute.get('/me',)
 authRoute.post("/forgotpassword", forgotPassword);
 authRoute.post("/resetpassword/:token", resetPassword);
 
-authRoute.get("/user", authmiddleware, getUser);
-authRoute.get("/logout", authmiddleware, logout);
+
+
 
 module.exports = authRoute;
