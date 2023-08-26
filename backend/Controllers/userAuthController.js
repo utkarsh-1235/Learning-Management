@@ -2,7 +2,9 @@ const userModel = require('../Models/userSchema.js')
 const emailValidator = require('email-validator')
 const bcrypt = require('bcrypt')
 const crypto = require('crypto')
+const cloudinary = require('cloudinary')
 const AppError = require('../Utils/error.utils.js')
+const fs = require('fs/promises')
 
 
 const cookieOptions = {
@@ -52,8 +54,8 @@ const register = async(req, res, next)=>{
       try{
         const result = await cloudinary.v2.uploader.upload(req.file.path, {
             folder: 'lms',
-            width: 250,
-            height: 250,
+            width: 100,
+            height: 100,
             gravity: 'faces',
             crop: 'fill'
         });
@@ -98,12 +100,14 @@ const register = async(req, res, next)=>{
 const login = async (req, res, next) => {
   
   try {
-    const {email, passowrd } = req.body;
+    const {email, password } = req.body;
+  
+    console.log(email, password);
 
     if(!email || !password){
       return next(new AppError('All fields are required', 400));
     }
-    const user = await User.findOne({
+    const user = await userModel.findOne({
       email
     }).select('+password');
 
@@ -111,7 +115,7 @@ const login = async (req, res, next) => {
       return next(new AppError('Email or password does not match', 400));
     }
 
-    const token = await user.generateJWTToken();
+    const token = await user.JWTToken();
      user.password = undefined;
 
      res.cookie('token', token, cookieOptions);

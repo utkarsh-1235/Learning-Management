@@ -10,7 +10,7 @@ const {register,
        logout,
        getprofile,
        forgotPassword,
-       resetPassword} = require('../Controllers/Controller.js')
+       resetPassword} = require('../Controllers/userAuthController.js')
 
 
 authRoute.post('/register', upload.single("avatar"),register);

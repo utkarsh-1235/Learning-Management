@@ -1,12 +1,9 @@
 const express = require('express')
 const app = new express();
 const authRoute = require('./Route/route')
-const dbConnect = require('./Config/db')
 const cookieParser = require('cookie-parser')
 const cors = require('cors')
 
-//database connection
-dbConnect();
 
  app.use(express.json()); // Built-in middleware
 app.use(cookieParser()); // Third-party middleware
