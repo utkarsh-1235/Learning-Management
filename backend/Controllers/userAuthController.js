@@ -182,46 +182,48 @@ const login = async (req, res, next) => {
  ******************************************************/
 
 const forgotPassword = async (req, res, next) => {
-    const email = req.body.email;
+    const {email} = req.body;
   
     // return response with error message If email is undefined
     if (!email) {
-      return res.status(400).json({
-        success: false,
-        message: "Email is required"
-      });
+      return next(new AppError('Email is required', 400));
     }
+
+    // retrieve user using given email.
+    const user = await userModel.findOne({
+      email
+    });
   
-    try {
-      // retrieve user using given email.
-      const user = await userModel.findOne({
-        email
-      });
-  
-      // return response with error message user not found
-      if (!user) {
-        return res.status(400).json({
-          success: false,
-          message: "user not found 🙅"
-        });
-      }
-  
-      // Generate the token with userSchema method getForgotPasswordToken().
-      const forgotPasswordToken = user.getForgotPasswordToken();
-  
+    // return response with error message user not found
+    if(!user){
+      return next(new AppError('user not found 🙅',400));
+    }
+
+    // generate reset password token with userSchema method getResetPasswordToken()
+    const resetToken = await user. getForgotPasswordResetToken()
       await user.save();
   
-      return res.status(200).json({
-        success: true,
-        token: forgotPasswordToken
-      });
-    } catch (error) {
-      return res.status(400).json({
-        success: false,
-        message: error.message
-      });
-    }
-  };
+      const resetPasswordUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
+      console.log(resetPasswordUrl);
+
+      const subject = 'Reset Password';
+    const message = `You can reset your password by clicking <a href=${resetPasswordUrl} target="_blank">Reset your password</a>\nIf the above link does not work for some reason then copy paste this link in new tab ${resetPasswordUrl}.\n If you have not requested this, kindly ignore.`;
+
+      try{
+     await sendEmail(email, subject, message)
+       return res.status(201).json({
+         success: true,
+         message: `Reset password token has been sent to ${email} successfully`
+       })
+      }
+      catch(err){
+        user.forgotPasswordExpiry = undefined;
+           user.forgotPasswordToken = undefined;
+
+           await user.save();
+           return next(new AppError(e.message,500));
+      }
+    } 
   
 
 
