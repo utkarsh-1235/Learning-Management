@@ -5,6 +5,7 @@ const crypto = require('crypto')
 const cloudinary = require('cloudinary')
 const AppError = require('../Utils/error.utils.js')
 const fs = require('fs/promises')
+const sendEmail = require('../Utils/sendmail.util.js')
 
 
 const cookieOptions = {
@@ -183,7 +184,7 @@ const login = async (req, res, next) => {
 
 const forgotPassword = async (req, res, next) => {
     const {email} = req.body;
-  
+    console.log(email);
     // return response with error message If email is undefined
     if (!email) {
       return next(new AppError('Email is required', 400));

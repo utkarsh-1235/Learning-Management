@@ -17,7 +17,7 @@ authRoute.post('/register', upload.single("avatar"),register);
 authRoute.post('/login', login);
 authRoute.post('/logout', logout);
 authRoute.get('/me',)
-authRoute.post("/forgotpassword", forgotPassword);
+authRoute.post("/reset", forgotPassword);
 authRoute.post("/resetpassword/:token", resetPassword);
 
 
