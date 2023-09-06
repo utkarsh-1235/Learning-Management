@@ -13,7 +13,7 @@ const {register,
        resetPassword} = require('../Controllers/userAuthController.js')
 
 
-authRoute.post('/register', register);
+authRoute.post('/register', upload.single("avatar"), register);
 authRoute.post('/login', login);
 authRoute.post('/logout', logout);
 authRoute.get('/me',)
