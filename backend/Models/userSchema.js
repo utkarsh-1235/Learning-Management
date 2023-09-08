@@ -3,7 +3,7 @@ const { Schema, model } = mongoose;
 const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const JWT = require('jsonwebtoken');
-//require('dotenv').congig();
+require('dotenv').config();
 
 const userSchema = new Schema(
   {
@@ -73,9 +73,12 @@ userSchema.methods = {
     return await JWT.sign(
       { id: this._id, email: this.email, subscription: this.subscription, role: this.role },
       process.env.JWT_SECRET,
-      { expiresIn: process.env.       JWT_EXPIRY, } 
+      { expiresIn: process.env.JWT_EXPIRY, } 
     );
   },
+  comparePassword: async function(plainTextPassword) {
+    return await bcrypt.compare(plainTextPassword, this.password);
+},
 
   //userSchema method for generating and return forgotPassword token
   getForgotPasswordResetToken: async function() {
@@ -87,7 +90,7 @@ userSchema.methods = {
       .digest('hex');
 
     /// forgot password expiry date
-    this.forgotPasswordExpiry = Date.now() + 20 * 60 * 1000; // 20min
+    this.forgotPasswordExpiry = Date.now() + 10 * 60 * 1000; // 10min
 
     //step 2 - return values to user
     return resetToken;

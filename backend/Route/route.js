@@ -2,8 +2,10 @@ const express = require('express')
 
 const authRoute = express.Router();
 
-const authmiddleware = require('../Middleware/middleware')
-const upload = require('../Middleware/multer.middleware')
+
+const upload = require('../Middleware/multer.middleware');
+
+const {isLoggedIn} = require('../Middleware/auth.middleware');
 
 const {register,
        login,
@@ -16,7 +18,7 @@ const {register,
 authRoute.post('/register', upload.single("avatar"), register);
 authRoute.post('/login', login);
 authRoute.post('/logout', logout);
-authRoute.get('/me',)
+authRoute.get('/me', isLoggedIn, getprofile);
 authRoute.post("/reset", forgotPassword);
 authRoute.post("/resetpassword/:token", resetPassword);
 

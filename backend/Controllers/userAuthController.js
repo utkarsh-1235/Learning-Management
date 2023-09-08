@@ -42,7 +42,7 @@ const register = async(req, res, next)=>{
        password,
        avatar: {
          public_id: email,
-         secure_url: 'https://res.cloudinary.com/du9jzqlpt/image/upload/v1674647316/avatar_drzgxv.jpg'
+         secure_url: "https://res.cloudinary.com/du9jzqlpt/image/upload/v1674647316/avatar_drzgxv.jpg"
        }
     });
 
@@ -116,7 +116,7 @@ const login = async (req, res, next) => {
       return next(new AppError('Email or password does not match', 400));
     }
 
-    const token = await user.JWTToken();
+    const token = await user.jwtToken();
      user.password = undefined;
 
      res.cookie('token', token, cookieOptions);
@@ -126,8 +126,8 @@ const login = async (req, res, next) => {
       message: 'User loggedin successfully',
       user
      });
-  } catch (error) {
-    return next(new AppError(e.message, 500));
+  } catch (err) {
+    return next(new AppError(err.message, 500));
   }
 };
 

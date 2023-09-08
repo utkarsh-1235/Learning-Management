@@ -1,5 +1,5 @@
-import AppError from "../utils/error.util.js";
-import jwt from 'jsonwebtoken';
+const AppError = require('../Utils/error.utils');
+const jwt = require('jsonwebtoken');
 
 const isLoggedIn = async (req, res, next) => {
     const { token } = req.cookies;
@@ -37,7 +37,7 @@ const authorizeSubscriber = async(req, res, next) => {
     next();
 }
 
-export {
+module.exports = {
     isLoggedIn,
     authorizedRoles,
     authorizeSubscriber
