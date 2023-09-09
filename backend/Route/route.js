@@ -12,7 +12,9 @@ const {register,
        logout,
        getprofile,
        forgotPassword,
-       resetPassword} = require('../Controllers/userAuthController.js')
+       resetPassword,
+       changePassword,
+updateUser} = require('../Controllers/userAuthController.js')
 
 
 authRoute.post('/register', upload.single("avatar"), register);
@@ -20,7 +22,9 @@ authRoute.post('/login', login);
 authRoute.post('/logout', logout);
 authRoute.get('/me', isLoggedIn, getprofile);
 authRoute.post("/reset", forgotPassword);
-authRoute.post("/resetpassword/:resetToken", resetPassword);
+authRoute.post("/reset/:resetToken", resetPassword);
+authRoute.post('/change-password', isLoggedIn, changePassword);
+authRoute.put('/update', isLoggedIn, upload.single("avatar"), updateUser);
 
 
 
