@@ -1,11 +1,11 @@
-const userModel = require('../Models/userSchema.js')
-const emailValidator = require('email-validator')
-const bcrypt = require('bcrypt')
-const crypto = require('crypto')
-const cloudinary = require('cloudinary')
-const AppError = require('../Utils/error.utils.js')
-const fs = require('fs/promises')
-const sendEmail = require('../Utils/sendmail.util.js')
+const userModel = require('../Models/userSchema.js');
+const emailValidator = require('email-validator');
+const bcrypt = require('bcrypt');
+const crypto = require('crypto');
+const cloudinary = require('cloudinary');
+const AppError = require('../Utils/error.utils.js');
+const fs = require('fs/promises');
+const sendEmail = require('../Utils/sendmail.util.js');
 
 
 const cookieOptions = {
@@ -24,7 +24,7 @@ const cookieOptions = {
 
 const register = async(req, res, next)=>{
     const {fullName, email, password, avatar } = req.body;
-    console.log(fullName, email, password, avatar);
+    console.log(fullName, email, password);
 
       /// every field is required
     if(!fullName || !email || !password){
@@ -60,6 +60,7 @@ const register = async(req, res, next)=>{
             gravity: 'faces',
             crop: 'fill'
         });
+        console.log(result);
 
         if(result) {
           user.avatar.public_id = result.public_id;
