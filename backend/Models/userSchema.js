@@ -86,7 +86,7 @@ userSchema.methods = {
     //step 1 - save to DB
     this.forgotPasswordToken = crypto
       .createHash('sha256')
-      .update(forgotToken)
+      .update(resetToken)
       .digest('hex');
 
     /// forgot password expiry date

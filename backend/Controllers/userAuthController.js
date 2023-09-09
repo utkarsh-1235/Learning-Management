@@ -165,7 +165,8 @@ const login = async (req, res, next) => {
      try{
        const userId = req.user.id;
        const user = await userModel.findById(userId);
-
+          
+       console.log(user);
        res.status(200).json({
         success: true,
         message: 'User details',
@@ -212,18 +213,19 @@ const forgotPassword = async (req, res, next) => {
     const message = `You can reset your password by clicking <a href=${resetPasswordUrl} target="_blank">Reset your password</a>\nIf the above link does not work for some reason then copy paste this link in new tab ${resetPasswordUrl}.\n If you have not requested this, kindly ignore.`;
 
       try{
-     await sendEmail(email, subject, message)
-       return res.status(201).json({
+          await sendEmail(email, subject, message);
+          return res.status(201).json({
          success: true,
          message: `Reset password token has been sent to ${email} successfully`
        })
+       
       }
       catch(err){
         user.forgotPasswordExpiry = undefined;
            user.forgotPasswordToken = undefined;
 
            await user.save();
-           return next(new AppError(e.message,500));
+           return next(new AppError(err.message,500));
       }
     } 
   
@@ -239,55 +241,38 @@ const forgotPassword = async (req, res, next) => {
    ******************************************************/
   
   const resetPassword = async (req, res, next) => {
-    const { token } = req.params;
-    const { password, confirmPassword } = req.body;
+    const { resetToken } = req.params;
+    const { password } = req.body;
   
-    // return error message if password or confirmPassword is missing
-    if (!password || !confirmPassword) {
-      return res.status(400).json({
-        success: false,
-        message: "password and confirmPassword is required"
-      });
-    }
-  
-    // return error message if password and confirmPassword  are not same
-    if (password !== confirmPassword) {
-      return res.status(400).json({
-        success: false,
-        message: "password and confirm Password does not match ❌"
-      });
-    }
-  
-    const hashToken = crypto.createHash("sha256").update(token).digest("hex");
+    
+    
+    const forgotPasswordToken = crypto.createHash("sha256").update(token).digest("hex");
   
     try {
       const user = await userModel.findOne({
-        forgotPasswordToken: hashToken,
+        forgotPasswordToken,
         forgotPasswordExpiryDate: {
-          $gt: new Date() // forgotPasswordExpiryDate() less the current date
+          $gt: Date.now()
         }
       });
   
       // return the message if user not found
       if (!user) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid Token or token is expired"
-        });
+        return next(new AppError("Invalid Token or token is expired", 400))
       }
   
       user.password = password;
-      await user.save();
+      user.forgotpasswordToken = undefined;
+      user.forgotpasswordExpiry = undefined;
+      
+      user.save();
   
       return res.status(200).json({
         success: true,
         message: "successfully reset the password"
       });
     } catch (error) {
-      return res.status(400).json({
-        success: false,
-        message: error.message
-      });
+      return next(new AppError(err.message,400));
     }
   };
   

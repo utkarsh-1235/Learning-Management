@@ -20,7 +20,7 @@ authRoute.post('/login', login);
 authRoute.post('/logout', logout);
 authRoute.get('/me', isLoggedIn, getprofile);
 authRoute.post("/reset", forgotPassword);
-authRoute.post("/resetpassword/:token", resetPassword);
+authRoute.post("/resetpassword/:resetToken", resetPassword);
 
 
 
