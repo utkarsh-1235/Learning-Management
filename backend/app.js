@@ -18,11 +18,11 @@ app.use(cookieParser());   // Third-party middleware
 
 app.use(morgan('dev'));
 
+// course route
+app.use('api/v1/courses',courseRoute);
 //auth Router
-app.use('/api/auth',userAuthRoute);
-app.use('/',(req, res)=>{
-    res.status(200).json({data: 'JWTauth'})
-});
+app.use('/api/v1/users',userAuthRoute);
+
 
 app.all('*',(req, res)=>{
     res.status(400).json('OOPS 404 not found')
