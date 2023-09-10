@@ -1,10 +1,11 @@
-const express = require('express')
+const express = require('express');
 const app = new express();
-const userAuthRoute = require('./Route/route')
-const cookieParser = require('cookie-parser')
-const cors = require('cors')
+const userAuthRoute = require('./Route/userRoute');
+const courseRoute = require('./Route/courseRoutes');
+const cookieParser = require('cookie-parser');
+const cors = require('cors');
 const morgan = require('morgan');
-const errorMiddleware = require('./Middleware/error.middleware')
+const errorMiddleware = require('./Middleware/error.middleware');
 
 
 app.use(express.json()); // Built-in middleware

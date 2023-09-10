@@ -97,5 +97,5 @@ userSchema.methods = {
   },
 };
 
-const userModel = mongoose.model('user', userSchema);
+const userModel = model('user', userSchema);
 module.exports = userModel;
