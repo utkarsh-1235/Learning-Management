@@ -163,7 +163,7 @@ const login = async (req, res, next) => {
    * @description get the user profile
    */
 
-  const getprofile = async(req, res)=>{
+  const getprofile = async(req, res, next)=>{
      try{
        const userId = req.user.id;
        const user = await userModel.findById(userId);
@@ -318,19 +318,29 @@ res.status(200).json({
 }
 
 const updateUser = async(req, res, next)=>{
-   const {fullName} = req.body;
-   const {id} = req.user.id;
+   const {fullName, role} = req.body;
+   const id = req.user.id;
 
    const user = await userModel.findById(id);
+     
+   console.log(user);
 
    if(!user){
     return next(new AppError('User does not exist', 400))
    }
-
+    
+   
+   
+   
    if(req.fullName){
     user.fullName = fullName;
    }
-
+      console.log(user.fullName, fullName);
+   if(req.role){
+    user.role = role;
+   }
+     
+   console.log(user.role, role);
    if(req.file){
     await cloudinary.v2.uploader.destroy(user.avatar.public_id);
 
@@ -348,7 +358,7 @@ const updateUser = async(req, res, next)=>{
 
         // Remove file from server
         fs.rm(`uploads/${req.file.filename}`)
-
+          await user.save();
     }
    }
    catch(err){
@@ -360,7 +370,8 @@ const updateUser = async(req, res, next)=>{
 await user.save();
 res.status(200).json({
   success: true,
-  message: 'User details updated successfully!'
+  message: 'User details updated successfully!',
+  user
 });
 } 
 module.exports = {register,

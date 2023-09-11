@@ -1,7 +1,7 @@
 const {Router} = require('express');
 const courseRoute = Router();
 
-const {getAllCourses, getLecturesById, createCourse, updateCourse, removeCourse} = require('../Controllers/courseController');
+const {getAllCourses, getLecturesById, createCourse, updateCourse, removeCourse, addLecturesToCoursebyId} = require('../Controllers/courseController');
 const { isLoggedIn, authorizeSubscriber, authorizedRoles } = require('../Middleware/auth.middleware');
 const upload = require('../Middleware/multer.middleware');
 
@@ -25,7 +25,7 @@ courseRoute.route('/:id')
            .post(isLoggedIn,
                  authorizedRoles('ADMIN'),
                  upload.single('lecture'),
-
+                 addLecturesToCoursebyId
                );
 
 
