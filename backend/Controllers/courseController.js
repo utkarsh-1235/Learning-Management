@@ -1,12 +1,14 @@
 const courseModel = require('../Models/coursemodel');
 const AppError = require('../Utils/error.utils');
 const fs = require('fs/promises');
+const cloudinary = require('cloudinary');
 
 // not working
 const getAllCourses = async(req, res, next)=>{
        try{
            const course = await courseModel.find({}).select('-lectures');
             
+           console.log(course);
            res.status(200).json({
                success: true,
                message: "All courses",
@@ -26,7 +28,7 @@ const getLecturesById = async(req, res, next)=>{
         const{ id } = req.params;
 
         const course = await courseModel.findById(id);
-  
+           console.log(course.lectures);
         if(!course){
           return next(new AppError("Invalid course id", 400));
         }
@@ -59,10 +61,11 @@ const createCourse = async(req, res, next)=>{
             createdBy,
             thumbnail:{
                 public_id: "Dummy" ,
-                secur_url: "Dummy"
+                secure_url: "Dummy"
             }
         })
-
+            
+        console.log(course);
         if(!course){
             return next(new AppError("Course could not created, please try again", 500))
         }
@@ -94,6 +97,39 @@ const createCourse = async(req, res, next)=>{
             course
         })
 }
+
+const updateCourse = async(req, res, next)=>{
+    try{
+        const {id} = req.params;
+
+        const course = await courseModel.findByIdAndUpdate(
+              id,
+              {
+               $set: req.body,
+              },
+              {
+               runValidators: true,
+              }
+        )   
+        console.log(course);
+   
+        if(!course){
+           return next(new AppError("Course with given id does not exist", 500))
+        }
+   
+        res.status(200).json({
+           success: true,
+           message: "course updated successfully",
+           course
+        })
+        await course.save();
+    }
+    catch(err){
+          return next(new AppError(err.message, 500))
+    }
+     
+}
 module.exports = {getAllCourses,
                   getLecturesById,
-                 createCourse};
+                  createCourse, 
+                  updateCourse};
