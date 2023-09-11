@@ -129,7 +129,31 @@ const updateCourse = async(req, res, next)=>{
     }
      
 }
+
+const removeCourse = async(req, res, next)=>{
+     try{
+         const {id} = req.params;
+         const course = await courseModel.findById(id);
+         
+         if (!course) {
+            return next(new AppError("Course with given id does not exist", 500));
+          }
+
+         await courseModel.findByIdAndDelete(id);
+        
+
+         res.status(200).json({
+            success: false,
+            message: 'Course removed successfully'
+         })
+         
+     }
+     catch(err){
+        return next(new AppError(err.message, 500))
+     }
+}
 module.exports = {getAllCourses,
                   getLecturesById,
                   createCourse, 
-                  updateCourse};
+                  updateCourse,
+                  removeCourse};

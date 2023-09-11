@@ -19,7 +19,7 @@ app.use(cookieParser());   // Third-party middleware
 app.use(morgan('dev'));
 
 // course route
-app.use('api/v1/courses',courseRoute);
+app.use('/api/v1/courses',courseRoute);
 //auth Router
 app.use('/api/v1/users',userAuthRoute);
 
