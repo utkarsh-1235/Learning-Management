@@ -5,7 +5,7 @@ const authRoute = express.Router();
 
 const upload = require('../Middleware/multer.middleware');
 
-const {isLoggedIn} = require('../Middleware/auth.middleware');
+const {isLoggedIn, authorizedRoles} = require('../Middleware/auth.middleware');
 
 const {register,
        login,
@@ -14,7 +14,8 @@ const {register,
        forgotPassword,
        resetPassword,
        changePassword,
-updateUser} = require('../Controllers/userAuthController.js')
+updateUser,
+getAllUser} = require('../Controllers/userAuthController.js')
 
 
 authRoute.post('/register', upload.single("avatar"), register);
@@ -25,6 +26,8 @@ authRoute.post("/reset", forgotPassword);
 authRoute.post("/reset/:resetToken", resetPassword);
 authRoute.post('/change-password', isLoggedIn, changePassword);
 authRoute.put('/update', isLoggedIn, upload.single("avatar"), updateUser);
+
+authRoute.get('/getAll', isLoggedIn, authorizedRoles('ADMIN'), getAllUser);
 
 
 

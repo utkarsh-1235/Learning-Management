@@ -8,7 +8,7 @@ const upload = require('../Middleware/multer.middleware');
 courseRoute.route('/')
            .get(getAllCourses)
            .post(isLoggedIn,
-                    authorizedRoles('ADMIN'),
+                    authorizedRoles('Educator'),
                     upload.single('thumbnail'),
                     createCourse);
 courseRoute.route('/:id')
@@ -16,14 +16,14 @@ courseRoute.route('/:id')
                 authorizeSubscriber, 
                 getLecturesById)
            .put(isLoggedIn,
-                authorizedRoles('ADMIN'),
+                authorizedRoles('Educator'),
                 updateCourse)
            .delete(isLoggedIn,
-                   authorizedRoles('ADMIN'),
+                   authorizedRoles('Educator'),
                    removeCourse
             )
            .post(isLoggedIn,
-                 authorizedRoles('ADMIN'),
+                 authorizedRoles('Educator'),
                  upload.single('lecture'),
                  addLecturesToCoursebyId
                );

@@ -323,25 +323,16 @@ const updateUser = async(req, res, next)=>{
 
    const user = await userModel.findById(id);
      
-   console.log(user);
 
    if(!user){
     return next(new AppError('User does not exist', 400))
    }
     
-   
-   
-   
-   if(req.fullName){
+    // Update user data
     user.fullName = fullName;
-   }
-      console.log(user.fullName, fullName);
-   if(req.role){
     user.role = role;
-   }
-     
-   console.log(user.role, role);
-   if(req.file){
+
+  if(req.file){
     await cloudinary.v2.uploader.destroy(user.avatar.public_id);
 
     try{
@@ -359,7 +350,8 @@ const updateUser = async(req, res, next)=>{
         // Remove file from server
         fs.rm(`uploads/${req.file.filename}`)
           await user.save();
-    }
+        }
+        
    }
    catch(err){
     return next(
@@ -368,12 +360,34 @@ const updateUser = async(req, res, next)=>{
    }
 }
 await user.save();
+console.log(user);
 res.status(200).json({
   success: true,
   message: 'User details updated successfully!',
   user
 });
 } 
+
+const getAllUser = async(req, res, next)=>{
+    
+  try{
+    const users = await userModel.find();
+
+    if(!users){
+      return next(new AppError("No any user"),400)
+    }
+    console.log(users);
+     res.status(200).json({
+      success: true,
+      message: "sucessfully fetched all users",
+      users
+    })
+  }
+  catch(err){
+     return next(new AppError(err.message, 500))
+  }
+  
+}
 module.exports = {register,
                   login, 
                   logout,
@@ -381,6 +395,7 @@ module.exports = {register,
                   forgotPassword,
                   resetPassword,
                   changePassword,
-                  updateUser              
+                  updateUser,
+                  getAllUser              
                   
                   }
