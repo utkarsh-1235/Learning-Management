@@ -1,6 +1,6 @@
-const {model, schema} = require('mongoose');
+const {model, Schema} = require('mongoose');
 
-const paymentSchema = new schema({
+const paymentSchema = new Schema({
     payment_id:{
         type: String,
         required: true

@@ -6,6 +6,7 @@ const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const morgan = require('morgan');
 const errorMiddleware = require('./Middleware/error.middleware');
+const paymentRoute = require('./Route/paymentRoute');
 
 
 app.use(express.json()); // Built-in middleware
@@ -20,8 +21,10 @@ app.use(morgan('dev'));
 
 // course route
 app.use('/api/v1/courses',courseRoute);
-//auth Router
+//auth route
 app.use('/api/v1/users',userAuthRoute);
+//payment route
+app.use('/api/v1/payments',paymentRoute);
 
 
 app.all('*',(req, res)=>{
