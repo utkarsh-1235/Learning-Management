@@ -12,10 +12,8 @@ Hi! My name is **Utkarsh Saxena**, I have created this project.
 6.  RestApi - https://youtu.be/AhCSfuG9Jxw _(optional)_
 
 # Install Dependencies
-
+ express, mongoose, cors, dotenv, jsonwebtoken, cookie-parser, morgan, multer, nodemailer, bcryptjs, crypto, email-validator, razorpay, cloudinary.
 **For Backend** - `npm i`
-
-**For Frontend** - `cd frontend` ` npm i`
 
 ## Env Variables
 
@@ -24,8 +22,6 @@ Make Sure to Create a config.env file in backend/config directory and add approp
 **Essential Variables**
 PORT=
 DB_URI =
-STRIPE_API_KEY=
-STRIPE_SECRET_KEY=
 JWT_SECRET=
 JWT_EXPIRE=
 COOKIE_EXPIRE=
