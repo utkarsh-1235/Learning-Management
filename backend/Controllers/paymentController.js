@@ -1,7 +1,17 @@
 const paymentModel = require('../Models/paymentmodel');
+const AppError = require('../Utils/error.utils');
 
 const getRazorpayApiKey = async(req, res, next)=>{
-
+     try{
+          res.status(200).json({
+              success: true,
+              message: 'Razorpay API key',
+              key: process.env.RAZORPAY_KEY_ID
+          })
+     }
+     catch(err){
+        return next(new AppError(err.message, 500))
+     }
 }
 
 const buySubscription = async(req, res, next)=>{
