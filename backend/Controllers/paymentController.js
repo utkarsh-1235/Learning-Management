@@ -1,5 +1,6 @@
 const paymentModel = require('../Models/paymentmodel');
 const AppError = require('../Utils/error.utils');
+const userModel = require('../Models/userSchema');
 
 const getRazorpayApiKey = async(req, res, next)=>{
      try{
@@ -15,7 +16,8 @@ const getRazorpayApiKey = async(req, res, next)=>{
 }
 
 const buySubscription = async(req, res, next)=>{
-    
+    const id = req.user;
+    const user = await userMode
 }
 
 

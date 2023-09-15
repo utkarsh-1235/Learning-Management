@@ -376,7 +376,7 @@ const getAllUser = async(req, res, next)=>{
     if(!users){
       return next(new AppError("No any user"),400)
     }
-    console.log(users);
+    console.log(users);x
      res.status(200).json({
       success: true,
       message: "sucessfully fetched all users",
