@@ -5,6 +5,8 @@ const {getAllCourses, getLecturesById, createCourse, updateCourse, removeCourse,
 const { isLoggedIn, authorizeSubscriber, authorizedRoles } = require('../Middleware/auth.middleware');
 const upload = require('../Middleware/multer.middleware');
 
+const{createRating} = require('../Controllers/RatingController');
+
 courseRoute.route('/')
            .get(getAllCourses)
            .post(isLoggedIn,
@@ -29,4 +31,8 @@ courseRoute.route('/:id')
                );
 
 
+               // Rating
+   courseRoute.route('/createRating') 
+              .post(isLoggedIn,
+                    createRating);
 module.exports = courseRoute;

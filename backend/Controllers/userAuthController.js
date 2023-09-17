@@ -27,7 +27,7 @@ const register = async(req, res, next)=>{
     console.log(fullName, email, password, role);
 
       /// every field is required
-    if(!fullName || !email || !password){
+    if(!fullName || !email || !password || !role){
         return next(new AppError("Every field is required", 400));
     }
     const userExists = await userModel.findOne({ email});
@@ -51,7 +51,7 @@ const register = async(req, res, next)=>{
     if(!user){
       return next(new AppError('User registration failed, please try again', 400));
     }
-
+        
     console.log('File Details > ', JSON.stringify(req.file));
     if(req.file){
       try{
@@ -71,6 +71,7 @@ const register = async(req, res, next)=>{
           // Remove file from server
           fs.rm(`uploads/${req.file.filename}`)
         }
+      await user.save();
       }
       catch(e){
         return next(new AppError(e || 'File not uploaded, please try again',500 ))
@@ -376,7 +377,7 @@ const getAllUser = async(req, res, next)=>{
     if(!users){
       return next(new AppError("No any user"),400)
     }
-    console.log(users);x
+    console.log(users);
      res.status(200).json({
       success: true,
       message: "sucessfully fetched all users",
